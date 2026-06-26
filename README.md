@@ -1,33 +1,90 @@
-# Syst-me-Embarqu-de-Gestion-des-Pr-sences-par-Double-Authentification-RFID-et-Reconnaissance-Faciale
+# Système de Gestion des Présences par Double Authentification RFID et Reconnaissance Faciale
 
-Système embarqué IoT permettant l'automatisation complète de la gestion des présences en milieu académique, combinant l'identification par badge RFID et la reconnaissance faciale pour garantir une vérification fiable et sécurisée contre les fraudes (prêt de badge, usurpation d'identité).
-Architecture
-Le système repose sur une chaîne de 4 composants matériels coordonnés :
+Système embarqué IoT conçu pour automatiser la gestion des présences en milieu académique. Il combine l'identification par badge RFID et la reconnaissance faciale afin de garantir une vérification fiable, rapide et sécurisée contre les fraudes courantes comme le prêt de badge ou l'usurpation d'identité.
 
-Arduino UNO — Lecture des badges RFID (module MFRC522), affichage LCD I2C et retour sonore via buzzer
-ESP32-CAM — Capture photo et transmission WiFi vers le Raspberry Pi
-Raspberry Pi — Traitement de la reconnaissance faciale et vérification de cohérence badge/visage
-Serveur PC (Flask) — API REST, base de données SQLite et interface web d'administration
+## Architecture
 
-Fonctionnalités
+Le système repose sur une chaîne de 4 composants matériels coordonnés en temps réel :
 
-Double authentification obligatoire (RFID + reconnaissance faciale) pour chaque présence étudiante
-Ouverture de séance simplifiée pour les enseignants (badge seul, sans reconnaissance faciale)
-Calcul automatique du statut de présence selon des seuils configurables (présent / retard / absent)
-Détection automatique des tentatives de fraude par incohérence badge/visage
-Fermeture automatique des séances en fin de créneau avec marquage des absents (APScheduler)
-Interface web de gestion : tableau de bord, emploi du temps par salle, historique des séances, gestion des étudiants/enseignants, traitement des alertes
-Gestion de cas exceptionnels (oubli de badge, validation manuelle par l'enseignant)
+| Composant | Rôle |
+|---|---|
+| **Arduino UNO** | Lecture des badges RFID (module MFRC522), affichage LCD I2C, retour sonore via buzzer |
+| **ESP32-CAM** | Capture photo dès détection d'un badge, transmission WiFi vers le Raspberry Pi |
+| **Raspberry Pi** | Reconnaissance faciale, vérification de cohérence badge/visage avant envoi au PC |
+| **Serveur PC (Flask)** | API REST, base de données SQLite, scheduler, interface web d'administration |
 
-Stack technique
-Backend : Python, Flask, SQLite, APScheduler
+```
+Arduino → ESP32-CAM → Raspberry Pi → PC (Flask + SQLite)
+```
 
-Vision par ordinateur : OpenCV, face_recognition
+## Fonctionnalités
 
-Embarqué : C++ (Arduino/ESP32), MFRC522, LiquidCrystal I2C
+- **Double authentification** obligatoire (RFID + reconnaissance faciale) pour la présence des étudiants
+- **Ouverture de séance simplifiée** pour les enseignants par simple scan de badge
+- **Calcul automatique du statut** de présence (présent / retard / absent) selon des seuils configurables
+- **Détection automatique de fraude** par incohérence entre badge scanné et visage détecté
+- **Fermeture automatique des séances** en fin de créneau avec marquage des absents (APScheduler)
+- **Interface web complète** : tableau de bord, emploi du temps par salle, historique des séances, gestion des étudiants/enseignants, traitement des alertes
+- **Gestion des cas exceptionnels** (oubli de badge avec validation manuelle par l'enseignant)
 
-Communication : REST API, HTTP multipart, Serial/UART, SPI, I2C, WiFi
+## Structure du projet
 
-Frontend : HTML, CSS, JavaScript (interface gestionnaire)
-Cas d'usage couverts
-Présence à l'heure · Retard · Absence · Fraude par badge prêté · Badge inconnu · Oubli de carte · Changement de créneau · Séance déjà ouverte · Panne réseau
+```
+CODES/
+├── routes/                  # Endpoints API Flask (séances, scans, gestionnaire)
+├── templates/                # Interface web (login + tableau de bord)
+├── config.py                  # Paramètres centraux (seuils, IPs, ports)
+├── database.py                # Schéma et connexion SQLite
+├── main.py                    # Point d'entrée du serveur Flask
+├── scheduler.py                # Fermeture automatique des séances
+├── setup_final.py              # Initialisation des données (classes, profs, étudiants, EDT)
+├── simuler_historique.py        # Génération d'un historique de présences réaliste
+├── test_api.py / test_complet.py / test_fermeture.py / test_scenario.py   # Scripts de test
+├── presence.db                 # Base de données SQLite
+Code_Arduino/                # Firmware Arduino (RFID, LCD, buzzer)
+Code_ESP32/                  # Firmware ESP32-CAM (capture photo, WiFi)
+```
+
+> Le code du Raspberry Pi (traitement de la reconnaissance faciale et orchestration des requêtes) sera ajouté séparément.
+
+## Stack technique
+
+**Backend** : Python, Flask, Flask-CORS, SQLite, APScheduler
+**Vision par ordinateur** : OpenCV, face_recognition
+**Embarqué** : C++ (Arduino/ESP32), MFRC522, LiquidCrystal I2C, ArduinoJson
+**Communication** : API REST, HTTP multipart, Serial/UART, SPI, I2C, WiFi
+**Frontend** : HTML, CSS, JavaScript
+
+## Cas d'usage couverts
+
+Présence à l'heure · Retard · Absence automatique · Fraude par badge prêté · Badge inconnu · Oubli de carte avec validation manuelle · Changement de créneau · Séance déjà ouverte · Panne réseau temporaire
+
+## Installation rapide
+
+### Serveur PC
+
+```bash
+cd CODES
+pip install flask flask-cors apscheduler requests
+python main.py
+```
+
+### Initialiser les données de test
+
+```bash
+python setup_final.py
+```
+
+### Accéder à l'interface
+
+```
+http://localhost:5000
+```
+
+### Firmware Arduino / ESP32-CAM
+
+Ouvrir les fichiers `.ino` correspondants dans l'IDE Arduino, adapter les identifiants WiFi et les adresses IP dans la configuration, puis téléverser sur chaque carte.
+
+## Auteur
+
+Projet académique — Conception et réalisation d'un système embarqué de gestion des présences par double authentification RFID et reconnaissance faciale.
