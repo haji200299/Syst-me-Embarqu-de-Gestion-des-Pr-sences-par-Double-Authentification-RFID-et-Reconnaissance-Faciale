@@ -1,0 +1,2 @@
+# Syst-me-Embarqu-de-Gestion-des-Pr-sences-par-Double-Authentification-RFID-et-Reconnaissance-Faciale
+Système embarqué IoT conçu pour automatiser entièrement la gestion des présences en milieu académique. Il combine l'identification par badge RFID et la reconnaissance faciale afin de garantir une vérification fiable, rapide et sécurisée contre les fraudes courantes comme le prêt de badge ou l'usurpation d'identité.
