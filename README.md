@@ -10,7 +10,7 @@ Le système repose sur une chaîne de 4 composants matériels coordonnés en tem
 |---|---|
 | **Arduino UNO** | Lecture des badges RFID (module MFRC522), affichage LCD I2C, retour sonore via buzzer |
 | **ESP32-CAM** | Capture photo dès détection d'un badge, transmission WiFi vers le Raspberry Pi |
-| **Raspberry Pi** | Reconnaissance faciale, vérification de cohérence badge/visage avant envoi au PC |
+| **Raspberry Pi** | Reconnaissance faciale (`face_handler.py`), vérification de cohérence badge/visage et anti-fraude (`badge_handler.py`), serveur de réception (`app.py`) |
 | **Serveur PC (Flask)** | API REST, base de données SQLite, scheduler, interface web d'administration |
 
 ```
@@ -43,9 +43,13 @@ CODES/
 ├── presence.db                 # Base de données SQLite
 Code_Arduino/                # Firmware Arduino (RFID, LCD, buzzer)
 Code_ESP32/                  # Firmware ESP32-CAM (capture photo, WiFi)
+Code_Raspberry/              # Traitement embarqué côté Raspberry Pi
+├── config.py                  # Paramètres (IP du PC, seuils de confiance faciale)
+├── app.py                      # Serveur Flask recevant les requêtes de l'ESP32-CAM
+├── face_handler.py              # Chargement des encodages et reconnaissance faciale
+├── badge_handler.py             # Logique métier : vérification RFID/visage, anti-fraude
+├── generate_encodings.py         # Génération des encodages faciaux à partir des photos
 ```
-
-> Le code du Raspberry Pi (traitement de la reconnaissance faciale et orchestration des requêtes) sera ajouté séparément.
 
 ## Stack technique
 
@@ -84,6 +88,15 @@ http://localhost:5000
 ### Firmware Arduino / ESP32-CAM
 
 Ouvrir les fichiers `.ino` correspondants dans l'IDE Arduino, adapter les identifiants WiFi et les adresses IP dans la configuration, puis téléverser sur chaque carte.
+
+### Raspberry Pi
+
+```bash
+cd Code_Raspberry
+pip install flask face_recognition opencv-python requests numpy
+python generate_encodings.py   # génère les encodages faciaux à partir des photos
+python app.py                   # démarre le serveur de réception
+```
 
 ## Auteur
 
