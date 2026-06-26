@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Systeme de Presence</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; color: #2c3e50; }
+
+/* ── NAV ── */
+nav {
+  background: #2c3e50; color: white;
+  padding: 0 24px; height: 54px;
+  display: flex; align-items: center; gap: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+nav .logo { font-size: 15px; font-weight: 600; margin-right: 20px; letter-spacing: 0.5px; }
+nav button {
+  background: none; border: none; color: rgba(255,255,255,0.7);
+  padding: 6px 14px; border-radius: 4px; cursor: pointer;
+  font-size: 13px; transition: all .15s;
+}
+nav button:hover, nav button.actif { background: rgba(255,255,255,0.12); color: white; }
+nav .right { margin-left: auto; font-size: 12px; color: rgba(255,255,255,0.5); }
+nav .right a { color: #e74c3c; text-decoration: none; margin-left: 12px; }
+
+/* ── LAYOUT ── */
+.container { padding: 24px; max-width: 1200px; margin: 0 auto; }
+.section { display: none; }
+.section.active { display: block; }
+h2 { font-size: 17px; font-weight: 600; margin-bottom: 18px; color: #2c3e50; }
+h3 { font-size: 14px; font-weight: 600; color: #555; margin-bottom: 12px; }
+
+/* ── CARTES ── */
+.card {
+  background: white; border-radius: 8px;
+  padding: 20px; margin-bottom: 18px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+/* ── STATS ── */
+.stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 20px; }
+.stat {
+  background: white; border-radius: 8px; padding: 18px;
+  text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  border-top: 3px solid #eee;
+}
+.stat.green  { border-top-color: #27ae60; }
+.stat.orange { border-top-color: #f39c12; }
+.stat.red    { border-top-color: #e74c3c; }
+.stat.blue   { border-top-color: #2980b9; }
+.stat .val { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+.stat.green  .val { color: #27ae60; }
+.stat.orange .val { color: #f39c12; }
+.stat.red    .val { color: #e74c3c; }
+.stat.blue   .val { color: #2980b9; }
+.stat .lab { font-size: 12px; color: #888; }
+
+/* ── TABLEAUX ── */
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-size: 11px; color: #999; font-weight: 600;
+     padding: 8px 12px; border-bottom: 1px solid #eee; text-transform: uppercase; }
+td { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid #f5f5f5; }
+tr:hover td { background: #fafafa; }
+tr:last-child td { border-bottom: none; }
+
+/* ── BADGES ── */
+.badge {
+  display: inline-block; padding: 3px 9px; border-radius: 12px;
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+}
+.badge.present  { background: #eafaf1; color: #27ae60; }
+.badge.retard   { background: #fef9e7; color: #f39c12; }
+.badge.absent   { background: #fdedec; color: #e74c3c; }
+.badge.justifie { background: #eaf2fb; color: #2980b9; }
+.badge.ouverte  { background: #eafaf1; color: #27ae60; }
+.badge.fermee   { background: #f5f5f5; color: #999; }
+.badge.fraude   { background: #fdedec; color: #e74c3c; }
+
+/* ── BOUTONS ── */
+.btn {
+  padding: 7px 14px; border-radius: 5px; border: none;
+  cursor: pointer; font-size: 12px; font-weight: 500; transition: opacity .15s;
+}
+.btn:hover { opacity: 0.85; }
+.btn-primary { background: #2980b9; color: white; }
+.btn-success { background: #27ae60; color: white; }
+.btn-danger  { background: #e74c3c; color: white; }
+.btn-gray    { background: #ecf0f1; color: #555; }
+.btn-sm      { padding: 4px 10px; font-size: 11px; }
+
+/* ── FORMULAIRES ── */
+.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+.form-group label { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; }
+.form-group input, .form-group select {
+  padding: 8px 10px; border: 1px solid #ddd; border-radius: 5px;
+  font-size: 13px; outline: none; transition: border-color .15s;
+}
+.form-group input:focus, .form-group select:focus { border-color: #2980b9; }
+
+/* ── SALLES GRID ── */
+.salles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 16px; margin-bottom: 20px; }
+.salle-card {
+  background: white; border-radius: 8px; padding: 18px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08); cursor: pointer;
+  border: 2px solid transparent; transition: all .2s;
+}
+.salle-card:hover, .salle-card.active { border-color: #2980b9; }
+.salle-card .salle-nom { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.salle-card .salle-info { font-size: 12px; color: #888; }
+
+/* ── EDT JOURS ── */
+.jours-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+.jour-btn {
+  padding: 6px 14px; border-radius: 4px; border: 1px solid #ddd;
+  background: white; cursor: pointer; font-size: 12px; transition: all .15s;
+}
+.jour-btn:hover, .jour-btn.actif { background: #2980b9; color: white; border-color: #2980b9; }
+
+/* ── PANEL DETAILS ── */
+.panel {
+  position: fixed; right: 0; top: 54px; width: 480px; height: calc(100vh - 54px);
+  background: white; box-shadow: -4px 0 16px rgba(0,0,0,0.1);
+  transform: translateX(100%); transition: transform .25s; overflow-y: auto;
+  z-index: 100;
+}
+.panel.open { transform: translateX(0); }
+.panel-header {
+  padding: 18px 20px; border-bottom: 1px solid #eee;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.panel-header h3 { font-size: 15px; margin: 0; }
+.panel-close { background: none; border: none; font-size: 20px; cursor: pointer; color: #888; }
+.panel-body { padding: 20px; }
+
+/* ── TABS ── */
+.tabs { display: flex; border-bottom: 1px solid #eee; margin-bottom: 16px; }
+.tab { padding: 8px 16px; cursor: pointer; font-size: 13px; color: #888; border-bottom: 2px solid transparent; }
+.tab.actif { color: #2980b9; border-bottom-color: #2980b9; }
+
+/* ── MODAL ── */
+.overlay { display:none; position:fixed; top:0;left:0;right:0;bottom:0; background:rgba(0,0,0,0.4); z-index:200; align-items:center; justify-content:center; }
+.overlay.open { display:flex; }
+.modal { background:white; border-radius:10px; padding:28px; width:460px; max-width:95vw; }
+.modal h3 { margin-bottom:18px; font-size:16px; }
+.modal-btns { display:flex; gap:10px; justify-content:flex-end; margin-top:18px; }
+
+/* ── REFRESH ── */
+.refresh-badge {
+  display: inline-block; background: #eafaf1; color: #27ae60;
+  padding: 3px 8px; border-radius: 10px; font-size: 11px; margin-left: 8px;
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="logo">Presence ISII</span>
+  <button onclick="aller('dashboard')"  id="btn-dashboard" class="actif">Tableau de bord</button>
+  <button onclick="aller('salles')"     id="btn-salles">Salles & EDT</button>
+  <button onclick="aller('etudiants')" id="btn-etudiants">Etudiants</button>
+  <button onclick="aller('profs')"     id="btn-profs">Professeurs</button>
+  <button onclick="aller('alertes')"   id="btn-alertes">Alertes <span id="badge-alerte"></span></button>
+  <div class="right">
+    Gestionnaire &nbsp;|&nbsp; <a href="/logout">Deconnexion</a>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- ══ DASHBOARD ══ -->
+  <div class="section active" id="section-dashboard">
+    <h2>Tableau de bord <span class="refresh-badge" id="last-refresh"></span></h2>
+
+    <div class="stats-grid">
+      <div class="stat green">
+        <div class="val" id="s-presents">—</div>
+        <div class="lab">Presents aujourd'hui</div>
+      </div>
+      <div class="stat orange">
+        <div class="val" id="s-retards">—</div>
+        <div class="lab">Retards</div>
+      </div>
+      <div class="stat red">
+        <div class="val" id="s-absents">—</div>
+        <div class="lab">Absents</div>
+      </div>
+      <div class="stat blue">
+        <div class="val" id="s-alertes">—</div>
+        <div class="lab">Alertes non traitees</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Seances du jour</h3>
+      <table>
+        <thead>
+          <tr><th>Matiere</th><th>Professeur</th><th>Classe</th><th>Salle</th><th>Debut</th><th>Fin prevue</th><th>Statut</th><th>Action</th></tr>
+        </thead>
+        <tbody id="t-seances"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ SALLES & EDT ══ -->
+  <div class="section" id="section-salles">
+    <h2>Salles et Emploi du Temps</h2>
+
+    <div class="salles-grid" id="salles-grid"></div>
+
+    <div class="card" id="edt-section" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <h3 id="edt-titre">EDT — Salle</h3>
+        <button class="btn btn-primary btn-sm" onclick="ouvrirModalEDT()">+ Ajouter creneau</button>
+      </div>
+
+      <div class="jours-tabs">
+        <button class="jour-btn actif" onclick="filtrerJour(-1, this)">Tous</button>
+        <button class="jour-btn" onclick="filtrerJour(0, this)">Lundi</button>
+        <button class="jour-btn" onclick="filtrerJour(1, this)">Mardi</button>
+        <button class="jour-btn" onclick="filtrerJour(2, this)">Mercredi</button>
+        <button class="jour-btn" onclick="filtrerJour(3, this)">Jeudi</button>
+        <button class="jour-btn" onclick="filtrerJour(4, this)">Vendredi</button>
+        <button class="jour-btn" onclick="filtrerJour(5, this)">Samedi</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr><th>Jour</th><th>Horaire</th><th>Matiere</th><th>Professeur</th><th>Classe</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="t-edt"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ ETUDIANTS ══ -->
+  <div class="section" id="section-etudiants">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <h2>Gestion des Etudiants</h2>
+      <button class="btn btn-primary" onclick="ouvrirModalEtudiant()">+ Ajouter etudiant</button>
+    </div>
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>Nom</th><th>Prenom</th><th>RFID</th><th>Classe</th><th>Statut</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="t-etudiants"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ PROFS ══ -->
+  <div class="section" id="section-profs">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <h2>Gestion des Professeurs</h2>
+      <button class="btn btn-primary" onclick="ouvrirModalProf()">+ Ajouter professeur</button>
+    </div>
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>Nom</th><th>Prenom</th><th>RFID</th><th>Matiere</th><th>Statut</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="t-profs"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ ALERTES ══ -->
+  <div class="section" id="section-alertes">
+    <h2>Alertes</h2>
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>Date</th><th>Type</th><th>RFID</th><th>Visage</th><th>Description</th><th>Action</th></tr>
+        </thead>
+        <tbody id="t-alertes"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ PANEL DETAILS SEANCE ══ -->
+<div class="panel" id="panel-seance">
+  <div class="panel-header">
+    <h3 id="panel-titre">Detail seance</h3>
+    <button class="panel-close" onclick="fermerPanel()">×</button>
+  </div>
+  <div class="panel-body">
+    <div class="tabs">
+      <div class="tab actif" onclick="changerTab('actuelle', this)">Seance actuelle</div>
+      <div class="tab" onclick="changerTab('historique', this)">Historique</div>
+    </div>
+    <div id="tab-actuelle"></div>
+    <div id="tab-historique" style="display:none"></div>
+  </div>
+</div>
+
+<!-- ══ MODALS ══ -->
+
+<!-- Modal EDT -->
+<div class="overlay" id="modal-edt">
+  <div class="modal">
+    <h3>Ajouter un creneau</h3>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Professeur</label>
+        <select id="m-edt-prof"></select>
+      </div>
+      <div class="form-group">
+        <label>Classe</label>
+        <select id="m-edt-classe"></select>
+      </div>
+      <div class="form-group">
+        <label>Jour</label>
+        <select id="m-edt-jour">
+          <option value="0">Lundi</option><option value="1">Mardi</option>
+          <option value="2">Mercredi</option><option value="3">Jeudi</option>
+          <option value="4">Vendredi</option><option value="5">Samedi</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Debut</label>
+        <input type="time" id="m-edt-debut" value="08:00">
+      </div>
+      <div class="form-group">
+        <label>Fin</label>
+        <input type="time" id="m-edt-fin" value="09:30">
+      </div>
+      <div class="form-group">
+        <label>Matiere</label>
+        <input type="text" id="m-edt-matiere" placeholder="Ex: Reseaux">
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-gray" onclick="fermerModal('modal-edt')">Annuler</button>
+      <button class="btn btn-primary" onclick="ajouterCreneauEDT()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Etudiant -->
+<div class="overlay" id="modal-etudiant">
+  <div class="modal">
+    <h3 id="modal-etu-titre">Ajouter un etudiant</h3>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nom</label>
+        <input type="text" id="m-etu-nom">
+      </div>
+      <div class="form-group">
+        <label>Prenom</label>
+        <input type="text" id="m-etu-prenom">
+      </div>
+      <div class="form-group">
+        <label>Badge RFID</label>
+        <input type="text" id="m-etu-rfid" placeholder="Ex: A3F2C1">
+      </div>
+      <div class="form-group">
+        <label>Classe</label>
+        <select id="m-etu-classe"></select>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-gray" onclick="fermerModal('modal-etudiant')">Annuler</button>
+      <button class="btn btn-primary" onclick="sauverEtudiant()">Sauvegarder</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Prof -->
+<div class="overlay" id="modal-prof">
+  <div class="modal">
+    <h3 id="modal-prof-titre">Ajouter un professeur</h3>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nom</label>
+        <input type="text" id="m-prof-nom">
+      </div>
+      <div class="form-group">
+        <label>Prenom</label>
+        <input type="text" id="m-prof-prenom">
+      </div>
+      <div class="form-group">
+        <label>Badge RFID</label>
+        <input type="text" id="m-prof-rfid">
+      </div>
+      <div class="form-group">
+        <label>Matiere</label>
+        <input type="text" id="m-prof-matiere">
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-gray" onclick="fermerModal('modal-prof')">Annuler</button>
+      <button class="btn btn-primary" onclick="sauverProf()">Sauvegarder</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Presence -->
+<div class="overlay" id="modal-presence">
+  <div class="modal">
+    <h3>Modifier la presence</h3>
+    <input type="hidden" id="m-pres-id">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nouveau statut</label>
+        <select id="m-pres-statut">
+          <option value="present">Present</option>
+          <option value="retard">Retard</option>
+          <option value="absent">Absent</option>
+          <option value="justifie">Justifie</option>
+        </select>
+      </div>
+      <div class="form-group" style="grid-column: 1/-1">
+        <label>Justification (optionnel)</label>
+        <input type="text" id="m-pres-justif" placeholder="Ex: Certificat medical">
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-gray" onclick="fermerModal('modal-presence')">Annuler</button>
+      <button class="btn btn-primary" onclick="sauverPresence()">Sauvegarder</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const JOURS = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
+let salleActive    = null;
+let edtActif       = [];
+let jourFiltre     = -1;
+let edtIdActuel    = null;
+let seanceIdActuel = null;
+let etuIdEdit      = null;
+let profIdEdit     = null;
+
+// ── Navigation ──────────────────────────────────────────────────────────
+function aller(section) {
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.querySelectorAll("nav button[id^='btn-']").forEach(b => b.classList.remove("actif"));
+  document.getElementById("section-" + section).classList.add("active");
+  document.getElementById("btn-" + section).classList.add("actif");
+  fermerPanel();
+
+  if (section === "dashboard")  chargerDashboard();
+  if (section === "salles")     chargerSalles();
+  if (section === "etudiants")  chargerEtudiants();
+  if (section === "profs")      chargerProfs();
+  if (section === "alertes")    chargerAlertes();
+}
+
+// ── Dashboard ────────────────────────────────────────────────────────────
+async function chargerDashboard() {
+  const rep  = await fetch("/api/dashboard");
+  const data = await rep.json();
+
+  document.getElementById("s-presents").textContent = data.stats.presents ?? 0;
+  document.getElementById("s-retards").textContent  = data.stats.retards  ?? 0;
+  document.getElementById("s-absents").textContent  = data.stats.absents  ?? 0;
+  document.getElementById("s-alertes").textContent  = data.nb_alertes;
+  document.getElementById("last-refresh").textContent = "Mis a jour " + new Date().toLocaleTimeString();
+
+  const badge = document.getElementById("badge-alerte");
+  badge.textContent = data.nb_alertes > 0 ? `(${data.nb_alertes})` : "";
+
+  const tbody = document.getElementById("t-seances");
+  if (data.seances.length === 0) {
+    tbody.innerHTML = "<tr><td colspan='8' style='text-align:center;color:#aaa;padding:20px'>Aucune seance aujourd'hui</td></tr>";
+    return;
+  }
+  tbody.innerHTML = data.seances.map(s => `
+    <tr>
+      <td><strong>${s.matiere}</strong></td>
+      <td>${s.prof_prenom} ${s.prof_nom}</td>
+      <td>${s.classe_nom}</td>
+      <td>${s.salle_nom}</td>
+      <td>${s.heure_debut_reelle ? s.heure_debut_reelle.slice(11,16) : s.heure_debut}</td>
+      <td>${s.heure_fin_prevue ? s.heure_fin_prevue.slice(11,16) : s.heure_fin}</td>
+      <td><span class="badge ${s.statut}">${s.statut}</span></td>
+      <td>
+        <button class="btn btn-gray btn-sm"
+          onclick="ouvrirPanelSeance(${s.id}, '${s.matiere}', ${s.edt_id || s.id})">
+          Detail
+        </button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+// ── Panel seance ─────────────────────────────────────────────────────────
+async function ouvrirPanelSeance(seanceId, titre, edtId) {
+  console.log("ouvrirPanelSeance appelé :", seanceId, titre, edtId);
+
+  seanceIdActuel = seanceId;
+  edtIdActuel    = edtId;
+
+  document.getElementById("panel-titre").textContent = titre;
+  document.getElementById("panel-seance").classList.add("open");
+
+  await chargerTabActuelle(seanceId);
+}
+
+function fermerPanel() {
+  document.getElementById("panel-seance").classList.remove("open");
+}
+
+function changerTab(tab, el) {
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("actif"));
+  el.classList.add("actif");
+  document.getElementById("tab-actuelle").style.display   = tab === "actuelle"   ? "block" : "none";
+  document.getElementById("tab-historique").style.display = tab === "historique" ? "block" : "none";
+
+  if (tab === "historique" && edtIdActuel) chargerHistorique(edtIdActuel);
+}
+
+async function chargerTabActuelle(seanceId) {
+  document.getElementById("tab-actuelle").style.display   = "block";
+  document.getElementById("tab-historique").style.display = "none";
+
+  const rep  = await fetch(`/api/seance/${seanceId}/presences`);
+  const data = await rep.json();
+
+  const div = document.getElementById("tab-actuelle");
+  if (data.length === 0) {
+    div.innerHTML = "<p style='color:#aaa;text-align:center;padding:20px'>Aucune presence enregistree</p>";
+    return;
+  }
+
+  div.innerHTML = `
+    <table>
+      <thead><tr><th>Nom</th><th>Prenom</th><th>Heure</th><th>Statut</th><th>Modifier</th></tr></thead>
+      <tbody>
+        ${data.map(p => `
+          <tr>
+            <td>${p.nom}</td>
+            <td>${p.prenom}</td>
+            <td>${p.timestamp_scan ? p.timestamp_scan.slice(11,16) : "—"}</td>
+            <td><span class="badge ${p.statut}">${p.statut}</span></td>
+            <td>
+              <button class="btn btn-gray btn-sm"
+                onclick="ouvrirModalPresence(${p.id}, '${p.statut}')">
+                Modifier
+              </button>
+            </td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+async function chargerHistorique(edtId) {
+  const rep  = await fetch(`/api/edt/${edtId}/historique`);
+  const data = await rep.json();
+
+  const div = document.getElementById("tab-historique");
+  if (data.length === 0) {
+    div.innerHTML = "<p style='color:#aaa;text-align:center;padding:20px'>Aucun historique</p>";
+    return;
+  }
+
+  div.innerHTML = `
+    <table>
+      <thead><tr><th>Date</th><th>Statut</th><th>Presents</th><th>Retards</th><th>Absents</th><th>Detail</th></tr></thead>
+      <tbody>
+        ${data.map(s => `
+          <tr>
+            <td>${s.date}</td>
+            <td><span class="badge ${s.statut}">${s.statut}</span></td>
+            <td style="color:#27ae60;font-weight:600">${s.nb_presents ?? 0}</td>
+            <td style="color:#f39c12;font-weight:600">${s.nb_retards ?? 0}</td>
+            <td style="color:#e74c3c;font-weight:600">${s.nb_absents ?? 0}</td>
+            <td>
+              <button class="btn btn-gray btn-sm"
+                onclick="chargerTabActuelle(${s.id}); changerTab('actuelle', document.querySelector('.tab'))">
+                Voir
+              </button>
+            </td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+// ── Salles & EDT ─────────────────────────────────────────────────────────
+async function chargerSalles() {
+  const rep   = await fetch("/api/salles");
+  const data  = await rep.json();
+  const grid  = document.getElementById("salles-grid");
+
+  grid.innerHTML = data.map(s => `
+    <div class="salle-card" id="salle-card-${s.id}" onclick="selectionnerSalle(${s.id}, '${s.nom}')">
+      <div class="salle-nom">${s.nom}</div>
+      <div class="salle-info">${s.batiment || ""}</div>
+      <div class="salle-info" style="margin-top:4px;font-size:11px;color:#aaa">
+        Pi: ${s.raspberry_ip || "—"}
+      </div>
+    </div>
+  `).join("");
+}
+
+async function selectionnerSalle(salleId, salleNom) {
+  salleActive = salleId;
+  document.querySelectorAll(".salle-card").forEach(c => c.classList.remove("active"));
+  document.getElementById("salle-card-" + salleId).classList.add("active");
+  document.getElementById("edt-titre").textContent = "EDT — " + salleNom;
+  document.getElementById("edt-section").style.display = "block";
+  await chargerEDTSalle(salleId);
+}
+
+async function chargerEDTSalle(salleId) {
+  const rep  = await fetch(`/api/salle/${salleId}/edt`);
+  edtActif   = await rep.json();
+  afficherEDT();
+}
+
+function afficherEDT() {
+  const tbody = document.getElementById("t-edt");
+  const filtre = edtActif.filter(e => jourFiltre === -1 || e.jour_semaine === jourFiltre);
+
+  if (filtre.length === 0) {
+    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center;color:#aaa;padding:20px'>Aucun creneau</td></tr>";
+    return;
+  }
+
+  tbody.innerHTML = filtre.map(e => `
+    <tr>
+      <td>${JOURS[e.jour_semaine]}</td>
+      <td>${e.heure_debut} → ${e.heure_fin}</td>
+      <td><strong>${e.matiere}</strong></td>
+      <td>${e.prof_prenom} ${e.prof_nom}</td>
+      <td>${e.classe_nom}</td>
+      <td>
+        <button class="btn btn-danger btn-sm" onclick="supprimerEDT(${e.id})">Supprimer</button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function filtrerJour(jour, el) {
+  jourFiltre = jour;
+  document.querySelectorAll(".jour-btn").forEach(b => b.classList.remove("actif"));
+  el.classList.add("actif");
+  afficherEDT();
+}
+
+// ── Modal EDT ────────────────────────────────────────────────────────────
+async function ouvrirModalEDT() {
+  const listes = await (await fetch("/api/listes")).json();
+  document.getElementById("m-edt-prof").innerHTML   = listes.profs.map(p => `<option value="${p.id}">${p.prenom} ${p.nom}</option>`).join("");
+  document.getElementById("m-edt-classe").innerHTML = listes.classes.map(c => `<option value="${c.id}">${c.nom}</option>`).join("");
+  ouvrirModal("modal-edt");
+}
+
+async function ajouterCreneauEDT() {
+  if (!salleActive) return;
+  await fetch("/api/edt/ajouter", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      salle_id    : salleActive,
+      prof_id     : parseInt(document.getElementById("m-edt-prof").value),
+      classe_id   : parseInt(document.getElementById("m-edt-classe").value),
+      jour_semaine: parseInt(document.getElementById("m-edt-jour").value),
+      heure_debut : document.getElementById("m-edt-debut").value,
+      heure_fin   : document.getElementById("m-edt-fin").value,
+      matiere     : document.getElementById("m-edt-matiere").value.trim()
+    })
+  });
+  fermerModal("modal-edt");
+  await chargerEDTSalle(salleActive);
+}
+
+async function supprimerEDT(id) {
+  if (!confirm("Supprimer ce creneau ?")) return;
+  await fetch(`/api/edt/${id}/supprimer`, { method: "DELETE" });
+  await chargerEDTSalle(salleActive);
+}
+
+// ── Etudiants ────────────────────────────────────────────────────────────
+async function chargerEtudiants() {
+  const [repEtu, repClasses] = await Promise.all([
+    fetch("/api/etudiants"), fetch("/api/classes")
+  ]);
+  const etus    = await repEtu.json();
+  const classes = await repClasses.json();
+
+  document.getElementById("m-etu-classe").innerHTML =
+    classes.map(c => `<option value="${c.id}">${c.nom}</option>`).join("");
+
+  const tbody = document.getElementById("t-etudiants");
+  tbody.innerHTML = etus.map(e => `
+    <tr>
+      <td>${e.nom}</td>
+      <td>${e.prenom}</td>
+      <td><code>${e.rfid_uid}</code></td>
+      <td>${e.classe_nom}</td>
+      <td><span class="badge ${e.actif ? 'present' : 'absent'}">${e.actif ? "Actif" : "Inactif"}</span></td>
+      <td>
+        <button class="btn btn-gray btn-sm" onclick="ouvrirModalEtudiant(${e.id}, '${e.nom}', '${e.prenom}', '${e.rfid_uid}', ${e.classe_id}, ${e.actif})">
+          Modifier
+        </button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+async function ouvrirModalEtudiant(id, nom, prenom, rfid, classeId, actif) {
+  etuIdEdit = id || null;
+  document.getElementById("modal-etu-titre").textContent = id ? "Modifier etudiant" : "Ajouter etudiant";
+  document.getElementById("m-etu-nom").value    = nom    || "";
+  document.getElementById("m-etu-prenom").value = prenom || "";
+  document.getElementById("m-etu-rfid").value   = rfid   || "";
+  if (classeId) {
+    const sel = document.getElementById("m-etu-classe");
+    if (sel.querySelector(`option[value="${classeId}"]`)) sel.value = classeId;
+  }
+  ouvrirModal("modal-etudiant");
+}
+
+async function sauverEtudiant() {
+  const body = {
+    nom      : document.getElementById("m-etu-nom").value.trim(),
+    prenom   : document.getElementById("m-etu-prenom").value.trim(),
+    rfid_uid : document.getElementById("m-etu-rfid").value.trim(),
+    classe_id: parseInt(document.getElementById("m-etu-classe").value),
+    actif    : 1
+  };
+
+  const url = etuIdEdit
+    ? `/api/etudiants/${etuIdEdit}/modifier`
+    : "/api/etudiants/ajouter";
+
+  await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  fermerModal("modal-etudiant");
+  chargerEtudiants();
+}
+
+// ── Profs ────────────────────────────────────────────────────────────────
+async function chargerProfs() {
+  const rep  = await fetch("/api/profs");
+  const data = await rep.json();
+
+  const tbody = document.getElementById("t-profs");
+  tbody.innerHTML = data.map(p => `
+    <tr>
+      <td>${p.nom}</td>
+      <td>${p.prenom}</td>
+      <td><code>${p.rfid_uid}</code></td>
+      <td>${p.matiere}</td>
+      <td><span class="badge ${p.actif ? 'present' : 'absent'}">${p.actif ? "Actif" : "Inactif"}</span></td>
+      <td>
+        <button class="btn btn-gray btn-sm"
+          onclick="ouvrirModalProf(${p.id}, '${p.nom}', '${p.prenom}', '${p.rfid_uid}', '${p.matiere}', ${p.actif})">
+          Modifier
+        </button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function ouvrirModalProf(id, nom, prenom, rfid, matiere, actif) {
+  profIdEdit = id || null;
+  document.getElementById("modal-prof-titre").textContent = id ? "Modifier professeur" : "Ajouter professeur";
+  document.getElementById("m-prof-nom").value     = nom     || "";
+  document.getElementById("m-prof-prenom").value  = prenom  || "";
+  document.getElementById("m-prof-rfid").value    = rfid    || "";
+  document.getElementById("m-prof-matiere").value = matiere || "";
+  ouvrirModal("modal-prof");
+}
+
+async function sauverProf() {
+  const body = {
+    nom     : document.getElementById("m-prof-nom").value.trim(),
+    prenom  : document.getElementById("m-prof-prenom").value.trim(),
+    rfid_uid: document.getElementById("m-prof-rfid").value.trim(),
+    matiere : document.getElementById("m-prof-matiere").value.trim(),
+    actif   : 1
+  };
+
+  const url = profIdEdit
+    ? `/api/profs/${profIdEdit}/modifier`
+    : "/api/profs/ajouter";
+
+  await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  fermerModal("modal-prof");
+  chargerProfs();
+}
+
+// ── Presences ────────────────────────────────────────────────────────────
+function ouvrirModalPresence(id, statut) {
+  document.getElementById("m-pres-id").value = id;
+  document.getElementById("m-pres-statut").value = statut;
+  document.getElementById("m-pres-justif").value = "";
+  ouvrirModal("modal-presence");
+}
+
+async function sauverPresence() {
+  const id     = document.getElementById("m-pres-id").value;
+  const statut = document.getElementById("m-pres-statut").value;
+  const justif = document.getElementById("m-pres-justif").value;
+
+  await fetch(`/api/presences/${id}/modifier`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ statut, justification: justif })
+  });
+
+  fermerModal("modal-presence");
+  if (seanceIdActuel) chargerTabActuelle(seanceIdActuel);
+}
+
+// ── Alertes ──────────────────────────────────────────────────────────────
+async function chargerAlertes() {
+  const rep  = await fetch("/api/alertes");
+  const data = await rep.json();
+
+  const tbody = document.getElementById("t-alertes");
+  if (data.length === 0) {
+    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center;color:#aaa;padding:20px'>Aucune alerte</td></tr>";
+    return;
+  }
+  tbody.innerHTML = data.map(a => `
+    <tr>
+      <td>${a.timestamp ? a.timestamp.slice(0,16) : "—"}</td>
+      <td><span class="badge fraude">${a.type_alerte}</span></td>
+      <td><code>${a.rfid_scanne || "—"}</code></td>
+      <td>${a.visage_detecte || "—"}</td>
+      <td>${a.description || "—"}</td>
+      <td>
+        <button class="btn btn-success btn-sm" onclick="traiterAlerte(${a.id})">
+          Traiter
+        </button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+async function traiterAlerte(id) {
+  await fetch(`/api/alertes/${id}/traiter`, { method: "POST" });
+  chargerAlertes();
+  chargerDashboard();
+}
+
+// ── Utilitaires ──────────────────────────────────────────────────────────
+function ouvrirModal(id) { document.getElementById(id).classList.add("open"); }
+function fermerModal(id) { document.getElementById(id).classList.remove("open"); }
+
+// Fermer modal en cliquant dehors
+document.querySelectorAll(".overlay").forEach(o => {
+  o.addEventListener("click", e => { if (e.target === o) o.classList.remove("open"); });
+});
+
+// ── Démarrage ────────────────────────────────────────────────────────────
+chargerDashboard();
+setInterval(chargerDashboard, 30000);
+</script>
+</body>
+</html>

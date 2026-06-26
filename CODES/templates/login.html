@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Connexion — Système de présence</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .carte {
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.1);
+      width: 360px;
+    }
+    h1 { font-size: 20px; margin-bottom: 8px; color: #2d2d2d; }
+    p  { font-size: 13px; color: #888; margin-bottom: 28px; }
+    label { display: block; font-size: 13px; color: #555; margin-bottom: 6px; }
+    input {
+      width: 100%; padding: 10px 14px;
+      border: 1px solid #ddd; border-radius: 8px;
+      font-size: 14px; margin-bottom: 16px;
+      outline: none; transition: border-color .2s;
+    }
+    input:focus { border-color: #534AB7; }
+    button {
+      width: 100%; padding: 12px;
+      background: #534AB7; color: white;
+      border: none; border-radius: 8px;
+      font-size: 15px; cursor: pointer;
+      transition: background .2s;
+    }
+    button:hover { background: #3C3489; }
+    .erreur {
+      color: #c0392b; font-size: 13px;
+      margin-top: 12px; text-align: center;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="carte">
+    <h1>Système de présence</h1>
+    <p>Connectez-vous pour accéder à l'interface</p>
+
+    <label>Identifiant</label>
+    <input type="text" id="login" placeholder="gestionnaire">
+
+    <label>Mot de passe</label>
+    <input type="password" id="password" placeholder="••••••••">
+
+    <button onclick="seConnecter()">Se connecter</button>
+    <div class="erreur" id="erreur">Identifiants incorrects</div>
+  </div>
+
+  <script>
+    async function seConnecter() {
+      const login    = document.getElementById("login").value;
+      const password = document.getElementById("password").value;
+
+      const rep = await fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ login, password })
+      });
+
+      if (rep.ok) {
+        window.location.href = "/";
+      } else {
+        document.getElementById("erreur").style.display = "block";
+      }
+    }
+
+    // Permettre de valider avec Entrée
+    document.addEventListener("keydown", e => {
+      if (e.key === "Enter") seConnecter();
+    });
+  </script>
+</body>
+</html>
